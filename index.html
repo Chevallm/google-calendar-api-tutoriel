@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Google Calendar API Maxime</title>
+</head>
+
+<body>
+  <p>Connecté en tant que : <span class='username'>Anonyme</span></p>
+  <ul class="events">
+
+  </ul>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" charset="utf-8"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+    function start() {
+      // 2. Initialiser le client javascript (number 1 below)
+      gapi.client.init({
+        'apiKey': 'AIzaSyD2dOBnUo99kn1rWM5Sed-y9QsN5rmUMqo',
+        'clientId': '20104395760-a0p3mnaspc60h1rdcl3d4h282a9cr7l1.apps.googleusercontent.com',
+        'scope': 'profile',
+      }).then(function() {
+        // 3. Initilisation de l'API et requete pour récupere le nom de l'utilisateur
+        return gapi.client.request({
+          'path': 'https://people.googleapis.com/v1/people/me?requestMask.includeField=person.names',
+        })
+      }).then(function(response) {
+        // 4. Afficher le nom de l'utilisateur
+        $(".username").text(response.result.names[0].displayName)
+      }).then(function() {
+        // 5. Récuperer une liste de ses calendriers
+        return gapi.client.request({
+          'path': 'https://www.googleapis.com/calendar/v3/users/me/calendarList'
+        })
+      }).then(function(response) {
+        // 6. On garde le calendrier personnel (le premier)
+        let calendarId = response.result.items[0].id;
+        // 7. on récupère les évènements associés à ce calendrier
+        return gapi.client.request({
+          'path': `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`
+        })
+      }).then(function(response) {
+        // 8. On affiche les évènements dans une liste
+        let events = response.result.items;
+        events.map((event) => {
+          $('.events').append(`<li><a href=${event.htmlLink}>${event.summary || event.description}</a> le ${getStartDate(event)}</li>`)
+        })
+
+      })
+    };
+    // Fonction qui permet de récupérer la date sous le format JJ/MM/YYYY
+    function getStartDate(event) {
+      let startDateUTC = new Date(event.start.dateTime);
+      let dateStart = new Date(Date.UTC(startDateUTC.getFullYear(), startDateUTC.getMonth(), startDateUTC.getDate()))
+      // Selon la données disponible dans l'évènement
+      if(dateStart.toLocaleDateString('fr-FR') !== "Invalid Date") {
+        return dateStart.toLocaleDateString('fr-FR');
+      } else {
+        return new Date(event.start.date).toLocaleDateString('fr-FR');
+      }
+    }
+    // 1. Load the JavaScript client library.
+    gapi.load('client', start);
+  </script>
+</body>
+</html>
